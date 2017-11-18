@@ -8,12 +8,12 @@ contract Votechain {
     // === Модификаторы ===
 
     modifier onlyInitiator() {
-        if (msg.sender != initiator) throw;
+        if (msg.sender != initiator) revert();
         _;
     }
 
     modifier onlyUkMan() {
-        if (msg.sender != ukMan) throw;
+        if (msg.sender != ukMan) revert();
         _;
     }
     // === РЕЕСТР ЖИЛЬЦОВ ===
@@ -41,8 +41,8 @@ contract Votechain {
     //TODO: дать право заполняющему назначать новых заполняющих
 
     //добавить жильца
-    function addHolder(Holder holder) onlyUkMan{
-        holders[holder];
+    function addHolder(address ethAddress, Holder holder) onlyUkMan{
+        holders[ethAddress] = holder;
     }
 
     //деактивировать жильца
@@ -65,9 +65,32 @@ contract Votechain {
     Question[] public questions;
 
     //внести вопрос с вариантами ответа
+    function addQuestion(Question question){
+      questions.push(question);
+    }
+
     //запустить голосование
+    function startQuestion(uint position){
+      questions[position].startTime = block.timestamp;
+    }
+
     //остановить голосование
+    function stopQuestion(uint position){
+      questions[position].endTime = block.timestamp;
+      questions[position].isVoted = true;
+      questions[position].isAccepted = calculateVotes(position);
+    }
+
     //подсчитать голоса
+    function calculateVotes(uint questionPosition) returns (bool result){
+      //...
+      return result = true;
+    }
+
+    //проголосовать
+    function vote(){
+
+    }
 
 
     // === Constructor ===
@@ -80,7 +103,7 @@ contract Votechain {
     /// за кандидата номер proposal по имени `proposals[proposal].name`.
     function vote(uint proposal) {
         Voter storage sender = voters[msg.sender];
-        if (sender.voted) { throw; }
+        if (sender.voted) { revert(); }
         sender.voted = true;
         sender.vote = proposal;
 
@@ -117,7 +140,7 @@ contract Votechain {
     /// по выбору одного кандидита
     /// из массива имен кадидатов `proposalNames`.
     function startBallot(bytes32[] proposalNames) {
-      if (msg.sender != chairperson) { throw; }
+      if (msg.sender != chairperson) { revert(); }
 
       voters[chairperson].weight = 1;
 
@@ -144,7 +167,7 @@ contract Votechain {
         // все Эфиры по прежним адресам.
         // Но будте осторожны - в этом случае сгорит весь имеющийся газ.
         if ( !((msg.sender == chairperson) && !voters[voter].voted && (voters[voter].weight == 0)) ){
-          throw;
+          revert();
         }
         voters[voter].weight = 1;
     }
@@ -153,10 +176,10 @@ contract Votechain {
     function delegate(address to) {
         // присваевает ссылку
         Voter storage sender = voters[msg.sender];
-        if (sender.voted) { throw; }
+        if (sender.voted) { revert(); }
 
         // Делегировать самому себе запрещено.
-        if (to == msg.sender){ throw; }
+        if (to == msg.sender){ revert(); }
 
         // Передает право голоса дальше, если `to` уже делегирован кому-то.
         // Вообще, такие петли очень опасны,
@@ -168,7 +191,7 @@ contract Votechain {
             to = voters[to].delegate;
 
             // Мы обнаружили зацикливание - это недопустимо
-            if (to == msg.sender){ throw; }
+            if (to == msg.sender){ revert(); }
         }
 
         // Поскольку `sender` является ссылкой, конструкция ниже
