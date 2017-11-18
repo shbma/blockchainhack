@@ -17,7 +17,7 @@ contract Votechain {
         _;
     }
 
-    modifier onlyHolder(address addr){ //только жильцу
+    modifier onlyHolder() { //только жильцу
       if ( holders[msg.sender].square != 0) revert();
       _;
     }
@@ -74,6 +74,7 @@ contract Votechain {
       uint8 startTime; //когда выложен на голосование вопрос, block.timestamp
       uint8 endTime;  //когда остановлено голосование
       mapping(uint8 => Vote) votes; //текущие результаты голосования
+      uint8 votesLength;
       bool isAccepted; //принят вопрос на голосовании или нет
     }
 
@@ -87,6 +88,7 @@ contract Votechain {
           startTime: uint8(block.timestamp),
           endTime: uint8(block.timestamp),
           //votes: [],
+          votesLength: 0,
           isAccepted: false
         }));
     }
@@ -106,10 +108,11 @@ contract Votechain {
     //проголосовать.
     //@params  номер вопроса, за/против
     function vote(uint questionPosition, bool voteVal) public onlyHolder{
-        questions[questionPosition].votes.push(Vote({
+        var newVotesLen = questions[questionPosition].votesLength + 1;
+        questions[questionPosition].votes[newVotesLen] = Vote({
             ethAddress: msg.sender,
             vote: voteVal
-          }));
+          });
     }
 
     //подсчитать голоса
