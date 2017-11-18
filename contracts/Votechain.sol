@@ -115,10 +115,24 @@ contract Votechain {
           });
     }
 
-    //подсчитать голоса
+    //подсчитать голоса, сказать приняли или нет
     function calculateVotes(uint questionPosition) public returns (bool result){
-      //...
-      return result = true;
+      uint8 votesLength = questions[questionPosition].votesLength; //кол-во голосов
+      uint8 upVotesCount = 0; //число голосов ЗА
+
+      //проходим и суммируем все голоса ЗА
+      for(uint8 i=0; i<votesLength; i++){
+        if (questions[questionPosition].votes[i].vote) {
+          upVotesCount++;
+        }
+      }
+
+      //принимаем решение исходя из соотношения ЗА и ПРОТИВ
+      if (2*upVotesCount > votesLength){
+        result = true;
+      } else {
+        result = false;
+      }
     }
 
 
