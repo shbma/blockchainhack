@@ -1,4 +1,4 @@
-pragma solidity ^0.4.8;
+pragma solidity ^0.4.18;
 
 /// @title Реестр жильцов и Голосовалка дома(ов) управляемых данной УК
 /// Для каждой новой УК выкладывается новый экземпляр этого контракта.
@@ -21,7 +21,7 @@ contract Votechain {
     // Данные Жильца
     struct Holder{
         bool isActive; //живет в подконтрольном доме или уже нет
-        uint square; //площадь квартиры - для учета при голосовании
+        uint8 square; //площадь квартиры - для учета при голосовании
         string realAddress; //факт. адрес: страна;город;улица;дом;корпус;квартира
     }
 
@@ -35,18 +35,22 @@ contract Votechain {
     address public ukMan; //представитель УК
 
     //назначить заполняющейго от УК
-    function setUkMan(address man) onlyInitiator{
+    function setUkMan(address man) public onlyInitiator{
       ukMan = man;
     }
     //TODO: дать право заполняющему назначать новых заполняющих
 
     //добавить жильца
-    function addHolder(address ethAddress, Holder holder) onlyUkMan{
-        holders[ethAddress] = holder;
+    function addHolder(address ethAddress, uint8 s, string addr) public onlyUkMan{
+        holders[ethAddress] = Holder({
+            isActive: true,
+            square: s,
+            realAddress: addr
+        });
     }
 
     //деактивировать жильца
-    function deactivateHolder(address holderAddress) onlyUkMan {
+    function deactivateHolder(address holderAddress) public onlyUkMan {
       holders[holderAddress].isActive = false;
     }
 
@@ -56,45 +60,51 @@ contract Votechain {
     struct Question{
       address author; //инициатор
       bool isVoted; //закончено ли голосование по этому вопросу
-      uint startTime; //когда выложен на голосование вопрос, block.timestamp
-      uint endTime;  //когда остановлено голосование
-      mapping(address => bool) votes; //текущие результаты голосования
+      uint8 startTime; //когда выложен на голосование вопрос, block.timestamp
+      uint8 endTime;  //когда остановлено голосование
+      //mapping(address => bool) votes; //текущие результаты голосования
       bool isAccepted; //принят вопрос на голосовании или нет
     }
 
     Question[] public questions;
 
-    //внести вопрос с вариантами ответа
-    function addQuestion(Question question){
-      questions.push(question);
+    //внести вопрос
+    function addQuestion(address author) public{
+      questions.push(Question({
+          author: author,
+          isVoted: false,
+          startTime: uint8(block.timestamp),
+          endTime: uint8(block.timestamp),
+          isAccepted: false
+        }));
     }
 
     //запустить голосование
-    function startQuestion(uint position){
-      questions[position].startTime = block.timestamp;
+    function startQuestion(uint position) public{
+      questions[position].startTime = uint8(block.timestamp);
     }
 
     //остановить голосование
-    function stopQuestion(uint position){
-      questions[position].endTime = block.timestamp;
+    function stopQuestion(uint position) public{
+      questions[position].endTime = uint8(block.timestamp);
       questions[position].isVoted = true;
       questions[position].isAccepted = calculateVotes(position);
     }
 
     //подсчитать голоса
-    function calculateVotes(uint questionPosition) returns (bool result){
+    function calculateVotes(uint questionPosition) public returns (bool result){
       //...
       return result = true;
     }
 
     //проголосовать
-    function vote(){
+    function vote() public{
 
     }
 
 
     // === Constructor ===
-    function Votechain() {
+    function Votechain() public{
         initiator = msg.sender;
     }
 
