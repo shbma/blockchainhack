@@ -7,14 +7,19 @@ contract Votechain {
 
     // === Модификаторы ===
 
-    modifier onlyInitiator() {
+    modifier onlyInitiator() { //только тому, кто выложил контракт
         if (msg.sender != initiator) revert();
         _;
     }
 
-    modifier onlyUkMan() {
+    modifier onlyUkMan() { //только представителю УК
         if (msg.sender != ukMan) revert();
         _;
+    }
+
+    modifier onlyHolder(address addr){ //только жильцу
+      if ( holders[msg.sender].square != 0) revert();
+      _;
     }
     // === РЕЕСТР ЖИЛЬЦОВ ===
 
@@ -23,6 +28,12 @@ contract Votechain {
         bool isActive; //живет в подконтрольном доме или уже нет
         uint8 square; //площадь квартиры - для учета при голосовании
         string realAddress; //факт. адрес: страна;город;улица;дом;корпус;квартира
+    }
+
+    // Голос+ жильца
+    struct Vote{
+      address ethAddress;
+      bool vote;
     }
 
     // Данные УК, ведущей реестр
@@ -62,7 +73,7 @@ contract Votechain {
       bool isVoted; //закончено ли голосование по этому вопросу
       uint8 startTime; //когда выложен на голосование вопрос, block.timestamp
       uint8 endTime;  //когда остановлено голосование
-      //mapping(address => bool) votes; //текущие результаты голосования
+      mapping(uint8 => Vote) votes; //текущие результаты голосования
       bool isAccepted; //принят вопрос на голосовании или нет
     }
 
@@ -75,6 +86,7 @@ contract Votechain {
           isVoted: false,
           startTime: uint8(block.timestamp),
           endTime: uint8(block.timestamp),
+          //votes: [],
           isAccepted: false
         }));
     }
@@ -91,15 +103,19 @@ contract Votechain {
       questions[position].isAccepted = calculateVotes(position);
     }
 
+    //проголосовать.
+    //@params  номер вопроса, за/против
+    function vote(uint questionPosition, bool voteVal) public onlyHolder{
+        questions[questionPosition].votes.push(Vote({
+            ethAddress: msg.sender,
+            vote: voteVal
+          }));
+    }
+
     //подсчитать голоса
     function calculateVotes(uint questionPosition) public returns (bool result){
       //...
       return result = true;
-    }
-
-    //проголосовать
-    function vote() public{
-
     }
 
 
