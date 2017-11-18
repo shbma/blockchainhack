@@ -3,11 +3,24 @@ pragma solidity ^0.4.8;
 /// @title Реестр жильцов и Голосовалка дома(ов) управляемых данной УК
 /// Для каждой новой УК выкладывается новый экземпляр этого контракта.
 contract Votechain {
+    address public initiator; //тот, кто выложил контракт
+
+    // === Модификаторы ===
+
+    modifier onlyInitiator() {
+        if (msg.sender != initiator) throw;
+        _;
+    }
+
+    modifier onlyUkMan() {
+        if (msg.sender != ukMan) throw;
+        _;
+    }
     // === РЕЕСТР ЖИЛЬЦОВ ===
 
     // Данные Жильца
     struct Holder{
-        bool active; //живет в подконтрольном доме или уже нет
+        bool isActive; //живет в подконтрольном доме или уже нет
         uint square; //площадь квартиры - для учета при голосовании
         string realAddress; //факт. адрес: страна;город;улица;дом;корпус;квартира
     }
@@ -18,36 +31,87 @@ contract Votechain {
         bytes32 email;
     }
 
-    //соответсвие эфировский адерес - жилец
-    mapping(address => Holder) public holders;
-
-    address public initiator; //выложивший аккаунт
+    mapping(address => Holder) public holders; //реестр жильцов
+    address public ukMan; //представитель УК
 
     //назначить заполняющейго от УК
-    //дать право заполняющему назначать новых заполняющих
+    function setUkMan(address man) onlyInitiator{
+      ukMan = man;
+    }
+    //TODO: дать право заполняющему назначать новых заполняющих
+
     //добавить жильца
-    //деактивировать жильца
-
-    // === ГОЛОСОВАЛКА ===
-    struct Question{
-
+    function addHolder(Holder holder) onlyUkMan{
+        holders[holder];
     }
 
-    Question[] public question;
-    
+    //деактивировать жильца
+    function deactivateHolder(address holderAddress) onlyUkMan {
+      holders[holderAddress].isActive = false;
+    }
+
+    // === ГОЛОСОВАЛКА ===
+
+    //вопрос, выносимый на голосование
+    struct Question{
+      address author; //инициатор
+      bool isVoted; //закончено ли голосование по этому вопросу
+      uint startTime; //когда выложен на голосование вопрос, block.timestamp
+      uint endTime;  //когда остановлено голосование
+      mapping(address => bool) votes; //текущие результаты голосования
+      bool isAccepted; //принят вопрос на голосовании или нет
+    }
+
+    Question[] public questions;
+
     //внести вопрос с вариантами ответа
     //запустить голосование
     //остановить голосование
     //подсчитать голоса
 
 
-    // Динамический массив структур Кандидатов.
-    Proposal[] public proposals;
-
-    /// Создает новое голосование
-    function Ballot() {
-        chairperson = msg.sender;
+    // === Constructor ===
+    function Votechain() {
+        initiator = msg.sender;
     }
+
+/*
+    /// Отдать голос (включая все голоса, доверенные тебе)
+    /// за кандидата номер proposal по имени `proposals[proposal].name`.
+    function vote(uint proposal) {
+        Voter storage sender = voters[msg.sender];
+        if (sender.voted) { throw; }
+        sender.voted = true;
+        sender.vote = proposal;
+
+        // Если номер `proposal` указывает за пределы массива,
+        // автоматически вылетаем и откатываем все изменения.
+        proposals[proposal].voteCount += sender.weight;
+    }
+
+    /// @dev Высчитывает победителя, учитывая всех проголосовавших
+    /// к данному моменту.
+    function winningProposal() constant
+            returns (uint winningProposal)
+    {
+        uint winningVoteCount = 0;
+        for (uint p = 0; p < proposals.length; p++) {
+            if (proposals[p].voteCount > winningVoteCount) {
+                winningVoteCount = proposals[p].voteCount;
+                winningProposal = p;
+            }
+        }
+    }
+
+    // Вызывает функцию winningProposal(), чтобы получить позицию
+    // выигравшего кандидата и затем возвращает имя победителя
+    function winnerName() constant
+            returns (bytes32 winnerName)
+    {
+        winnerName = proposals[winningProposal()].name;
+    }
+
+//----------------------------
 
     /// сбрасывает результаты и запускает новое голосование
     /// по выбору одного кандидита
@@ -122,39 +186,6 @@ contract Votechain {
             delegate.weight += sender.weight;
         }
     }
+*/
 
-    /// Отдать голос (включая все голоса, доверенные тебе)
-    /// за кандидата номер proposal по имени `proposals[proposal].name`.
-    function vote(uint proposal) {
-        Voter storage sender = voters[msg.sender];
-        if (sender.voted) { throw; }
-        sender.voted = true;
-        sender.vote = proposal;
-
-        // Если номер `proposal` указывает за пределы массива,
-        // автоматически вылетаем и откатываем все изменения.
-        proposals[proposal].voteCount += sender.weight;
-    }
-
-    /// @dev Высчитывает победителя, учитывая всех проголосовавших
-    /// к данному моменту.
-    function winningProposal() constant
-            returns (uint winningProposal)
-    {
-        uint winningVoteCount = 0;
-        for (uint p = 0; p < proposals.length; p++) {
-            if (proposals[p].voteCount > winningVoteCount) {
-                winningVoteCount = proposals[p].voteCount;
-                winningProposal = p;
-            }
-        }
-    }
-
-    // Вызывает функцию winningProposal(), чтобы получить позицию
-    // выигравшего кандидата и затем возвращает имя победителя
-    function winnerName() constant
-            returns (bytes32 winnerName)
-    {
-        winnerName = proposals[winningProposal()].name;
-    }
 }
