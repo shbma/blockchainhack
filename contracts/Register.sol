@@ -1,30 +1,45 @@
 pragma solidity ^0.4.8;
 
-/// @title Voting with delegation.
-contract Register {
+/// @title Реестр жильцов и Голосовалка дома(ов) управляемых данной УК
+/// Для каждой новой УК выкладывается новый экземпляр этого контракта.
+contract Votechain {
+    // === РЕЕСТР ЖИЛЬЦОВ ===
 
-    //соответсвие эфировский адерес - реальный адрес
-    mapping(address => realAdress) public holder;
-
-    // Голосущий
-    struct Voter {
-        uint weight; // weight is accumulated by delegation
-        bool voted;  // if true, that person already voted
-        address delegate; // person delegated to
-        uint vote;   // index of the voted proposal
+    // Данные Жильца
+    struct Holder{
+        bool active; //живет в подконтрольном доме или уже нет
+        uint square; //площадь квартиры - для учета при голосовании
+        string realAddress; //факт. адрес: страна;город;улица;дом;корпус;квартира
     }
 
-    // Кандидат
-    struct Proposal {
-        bytes32 name;   // short name (up to 32 bytes)
-        uint voteCount; // number of accumulated votes
+    // Данные УК, ведущей реестр
+    struct Uk {
+        bytes32 name;
+        bytes32 email;
     }
 
-    address public chairperson;
+    //соответсвие эфировский адерес - жилец
+    mapping(address => Holder) public holders;
 
-    // Переменная, хранящая состояние:
-    // отображение `Voter` на всевозможные адреса.
-    mapping(address => Voter) public voters;
+    address public initiator; //выложивший аккаунт
+
+    //назначить заполняющейго от УК
+    //дать право заполняющему назначать новых заполняющих
+    //добавить жильца
+    //деактивировать жильца
+
+    // === ГОЛОСОВАЛКА ===
+    struct Question{
+
+    }
+
+    Question[] public question;
+    
+    //внести вопрос с вариантами ответа
+    //запустить голосование
+    //остановить голосование
+    //подсчитать голоса
+
 
     // Динамический массив структур Кандидатов.
     Proposal[] public proposals;
