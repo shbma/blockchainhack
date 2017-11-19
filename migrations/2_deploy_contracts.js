@@ -1,11 +1,10 @@
-var Ballot = artifacts.require("./Ballot.sol");
-
+var Votechian = artifacts.require("./Votechain.sol");
 
 module.exports = function(deployer, network) {
   if (network == 'development') {
-    deployer.deploy(Ballot);
+    deployer.deploy(Votechian);
   }
   if (network == 'ropsten') {
-    deployer.deploy(Ballot);
+    deployer.deploy(Votechian);
   }
 };

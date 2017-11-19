@@ -1,11 +1,62 @@
-var Ballot = artifacts.require("./Ballot.sol");
+var Votechain = artifacts.require("./Votechain.sol");
 
-contract('Ballot', function(accounts) {
-  var citizen1 = accounts[1];
-  var citizen2 = accounts[2];
-  var citizen3 = accounts[3];
+contract('Votechain', function(accounts) {
+  var ukManAddr = accounts[0];
+  var holder1Addr = accounts[1];
+  var holder2Addr = accounts[2];
+  var alienAddr = accounts[3];
 
-  it("should create proposals array in storage", function() {
+  it("должен установить представителя УК", function(){
+    var contractAddress;
+
+    return Votechain.deployed().then(function(votechain){
+      contractAddress = votechain.address;
+      return votechain.setUkMan(ukManAddr);
+    }).then(function(tx){
+      var votechain = Votechain.at(contractAddress);
+      return votechain.ukMan.call()
+    }).then(function(ukMan){
+      assert.equal(ukMan, ukManAddr, "Представитель УК не задался");
+    })
+  })
+
+  it("представитель УК должен добавить жильца", function(){
+    var contractAddress;
+    var newHolder = {
+      isActive: true,
+      square: 100,
+      realAddress: "Russia;Yekaterinburg;Yeltsina;;3a;102"
+    }
+
+    return Votechain.deployed().then(function(votechain){
+      contractAddress = votechain.address;
+      //установили представителя УК
+      return votechain.setUkMan(ukManAddr);
+
+    }).then(function(tx){
+      var votechain = Votechain.at(contractAddress);
+      //добавили новго жильца от имени представителя УК
+      return votechain.addHolder(
+        newHolder.isActive,
+        newHolder.square,
+        newHolder.realAddress,
+        {from: ukManAddr});
+
+    }).then(function(tx){
+      var votechain = Votechain.at(contractAddress);
+      //попробовали взять жильца по эфирному адресу из массива
+      return votechain.holders.call(holder1Addr)
+
+    }).then(function(holder){
+      //сравним площади, если равны - значит факт внесения в список состоялся
+      assert.equal(holder.square, newHolder.square, "Нового жильца УК внести не смог");
+    })
+  })
+
+  //деактивировать жильца
+  //function deactivateHolder(address holderAddress) public onlyUkMan {
+
+  /*it("should create proposals array in storage", function() {
     var names = ['Ivan','Peter','Nikolaus']; // имена кандидатов
     var contractAddress;
 
@@ -21,7 +72,7 @@ contract('Ballot', function(accounts) {
       console.log(nameVotes0); console.log(nameVotes0[0]);
       assert.equal(nameVotes.name, names[0], "Кандидат 1 не совпадает");
     })
-  });
+  });*/
 
   /*it("should set deployer as chairperson", function() {
     return Ballot.deployed().then(function(instance) {
