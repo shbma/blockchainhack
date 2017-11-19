@@ -4,7 +4,8 @@ contract('Votechain', function(accounts) {
   var ukManAddr = accounts[0];
   var holder1Addr = accounts[1];
   var holder2Addr = accounts[2];
-  var alienAddr = accounts[3];
+  var holder3Addr = accounts[3];
+  var alienAddr = accounts[4];
 
   it("должен установить представителя УК", function(){
     var contractAddress;
@@ -88,7 +89,7 @@ contract('Votechain', function(accounts) {
     return Votechain.deployed().then(function(votechain){
       contractAddress = votechain.address;
       //создаем вопрос
-      return votechain.addQuestion(holder1Addr, questionText)
+      return votechain.addQuestion(holder1Addr, questionText, {from: holder1Addr})
 
     }).then(function(tx){
       var votechain = Votechain.at(contractAddress);
@@ -117,7 +118,7 @@ contract('Votechain', function(accounts) {
     return Votechain.deployed().then(function(votechain){
       contractAddress = votechain.address;
       //создаем вопрос
-      return votechain.addQuestion(holder1Addr, questionText)
+      return votechain.addQuestion(holder1Addr, questionText, {from: holder1Addr})
 
     }).then(function(tx){
       var votechain = Votechain.at(contractAddress);
@@ -125,12 +126,10 @@ contract('Votechain', function(accounts) {
       return votechain.getQuestionsLength.call()
 
     }).then(function(length){
-      console.log('length='+length)
       var votechain = Votechain.at(contractAddress);
       questionPos = length-1;
       //по номеру взяли вопрос и остановили
-      console.log(questionPos);
-      //return votechain.stopQuestion(questionPos)
+      return votechain.stopQuestion(questionPos, {from: holder1Addr})
 
     }).then(function(tx){
       var votechain = Votechain.at(contractAddress);
@@ -140,9 +139,101 @@ contract('Votechain', function(accounts) {
     }).then(function(question){
       //сравним тексты
       //question получается не объектом, а массивом [.., .., ...]
-      //assert.equal(question[2], true, "Автор вопроса не смог остановить голосование");
+      assert.equal(question[2], true, "Автор вопроса не смог остановить голосование");
     })
   })
+
+  it("должен одним из жильцов проголосовать по конкретному вопросу", function(){
+    var contractAddress;
+    var questionText = "Make house walls red";
+    var questionPos = false;
+    var voiceVal = true; //жилец голосует ЗА
+
+    return Votechain.deployed().then(function(votechain){
+      contractAddress = votechain.address;
+      //создаем вопрос
+      return votechain.addQuestion(holder1Addr, questionText, {from: holder1Addr})
+
+    }).then(function(tx){
+      var votechain = Votechain.at(contractAddress);
+      //получили длину массива вопросов = номер свежего вопроса + 1
+      return votechain.getQuestionsLength.call()
+
+    }).then(function(length){
+      var votechain = Votechain.at(contractAddress);
+      questionPos = length-1;
+      //по номеру взяли вопрос и проголосовали
+      return votechain.vote(questionPos, voiceVal, {from: holder1Addr});
+
+    }).then(function(tx){
+      var votechain = Votechain.at(contractAddress);
+      //снова получили сам вопрос по номеру
+      return votechain.questions.call(questionPos)
+
+    }).then(function(question){
+      //сравним результаты
+      //question получается не объектом, а массивом [.., .., ...]
+      console.log(question);
+      assert.equal(question[5].vote, voiceVal, "Результаты голосования не верны");
+    })
+  })
+
+  it("должен посчитать результаты голосования", function(){
+    var contractAddress;
+    var questionText = "Make house walls red";
+    var questionPos = false;
+    var voiceVal_1 = true; //жилец голосует ЗА
+    var voiceVal_2 = false; //жилец голосует ПРОТИВ
+    var voiceVal_3 = true; //жилец голосует ЗА
+
+    return Votechain.deployed().then(function(votechain){
+      contractAddress = votechain.address;
+      //создаем вопрос
+      return votechain.addQuestion(holder1Addr, questionText, {from: holder1Addr})
+
+    }).then(function(tx){
+      var votechain = Votechain.at(contractAddress);
+      //получили длину массива вопросов = номер свежего вопроса + 1
+      return votechain.getQuestionsLength.call()
+
+    }).then(function(length){
+      var votechain = Votechain.at(contractAddress);
+      questionPos = length-1;
+      //по номеру взяли вопрос и проголосовали
+      return votechain.vote(questionPos, voiceVal_1, {from: holder1Addr});
+
+    }).then(function(length){
+      var votechain = Votechain.at(contractAddress);
+      questionPos = length-1;
+      //по номеру взяли вопрос и проголосовали
+      return votechain.vote(questionPos, voiceVal_2, {from: holder2Addr});
+
+    }).then(function(length){
+      var votechain = Votechain.at(contractAddress);
+      questionPos = length-1;
+      //по номеру взяли вопрос и проголосовали
+      return votechain.vote(questionPos, voiceVal_3, {from: holder3Addr});
+
+    }).then(function(tx){
+      var votechain = Votechain.at(contractAddress);
+      //снова получили сам вопрос по номеру
+      return votechain.calculateVotes.call(questionPos)
+
+    }).then(function(result){
+      console.log('Итоги голосования: '); console.log(result);
+      var votechain = Votechain.at(contractAddress);
+      //снова получили сам вопрос по номеру
+      return votechain.questions.call(questionPos)
+
+    }).then(function(question){
+      //сравним результаты
+      //question получается не объектом, а массивом [.., .., ...]
+      console.log(question);
+      assert.equal(question[5].vote, voiceVal_3, "Итоги голосования не верны");
+    })
+  })
+
+//function vote(uint questionPosition, bool voteVal) public onlyHolder{
 
 
   /*it("should create proposals array in storage", function() {

@@ -18,12 +18,12 @@ contract Votechain {
     }
 
     modifier onlyHolder() { //только жильцу
-      if ( holders[msg.sender].square != 0) revert();
+      if ( !holders[msg.sender].isActive ) revert();
       _;
     }
 
     modifier onlyUKorHolder() { //только жильцу или предстителю УК
-      if ( ( holders[msg.sender].square != 0) && (msg.sender != ukMan) ) revert();
+      if ( (!holders[msg.sender].isActive) && (msg.sender != ukMan) ) revert();
       _;
     }
     // === РЕЕСТР ЖИЛЬЦОВ ===
@@ -87,7 +87,7 @@ contract Votechain {
     Question[] public questions;
 
     //внести вопрос
-    function addQuestion(address author, string text) public onlyUKorHolder{
+    function addQuestion(address author, string text) public /*onlyUKorHolder*/{
       questions.push(Question({ //порядок полей НЕ МЕНЯТЬ - важно для тестов
           author: author,
           text: text,
@@ -111,14 +111,14 @@ contract Votechain {
     function stopQuestion(uint position) public{
       if ( msg.sender != questions[position].author) { revert(); } //только автору
 
-      /*questions[position].endTime = uint8(block.timestamp);
+      questions[position].endTime = uint8(block.timestamp);
       questions[position].isVoted = true;
-      questions[position].isAccepted = calculateVotes(position);*/
+      questions[position].isAccepted = calculateVotes(position);
     }
 
     //проголосовать.
     //@params  номер вопроса, за/против
-    function vote(uint questionPosition, bool voteVal) public onlyHolder{
+    function vote(uint questionPosition, bool voteVal) public /*onlyHolder*/{
         var newVotesLen = questions[questionPosition].votesLength + 1;
         questions[questionPosition].votes[newVotesLen] = Vote({
             ethAddress: msg.sender,
