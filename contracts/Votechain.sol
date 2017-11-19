@@ -82,6 +82,8 @@ contract Votechain {
       mapping(uint8 => Vote) votes; //текущие результаты голосования
       uint8 votesLength;
       bool isAccepted; //принят вопрос на голосовании или нет
+      uint8 numberUp;
+      uint8 numberDown;
     }
 
     Question[] public questions;
@@ -96,7 +98,9 @@ contract Votechain {
           endTime: uint8(block.timestamp),
           //votes: [],
           votesLength: 0,
-          isAccepted: false
+          isAccepted: false,
+          numberUp: 0,
+          numberDown: 0
         }));
     }
 
@@ -124,6 +128,14 @@ contract Votechain {
             ethAddress: msg.sender,
             vote: voteVal
           });
+        questions[questionPosition].votesLength++;
+
+        //сразу пишем результаты кто за кто против
+        if (voteVal){
+          questions[questionPosition].numberUp = questions[questionPosition].numberUp+1;
+        } else {
+          questions[questionPosition].numberDown += 1;
+        }
     }
 
     //подсчитать голоса, сказать приняли или нет
@@ -132,18 +144,23 @@ contract Votechain {
       uint8 upVotesCount = 0; //число голосов ЗА
 
       //проходим и суммируем все голоса ЗА
-      for(uint8 i=0; i<votesLength; i++){
+      /*for(uint8 i=0; i<votesLength; i++){
         if (questions[questionPosition].votes[i].vote) {
           upVotesCount++;
         }
-      }
-
+      }*/
       //принимаем решение исходя из соотношения ЗА и ПРОТИВ
-      if (2*upVotesCount > votesLength){
+      if (questions[questionPosition].numberUp - questions[questionPosition].numberDown > 0){
         result = true;
       } else {
         result = false;
       }
+
+      /*if (2*upVotesCount > votesLength){
+        result = true;
+      } else {
+        result = false;
+      }*/
     }
 
 

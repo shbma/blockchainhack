@@ -168,12 +168,22 @@ contract('Votechain', function(accounts) {
     }).then(function(tx){
       var votechain = Votechain.at(contractAddress);
       //снова получили сам вопрос по номеру
-      return votechain.questions.call(questionPos)
+      return votechain.questions.call(questionPos);
 
     }).then(function(question){
       //сравним результаты
       //question получается не объектом, а массивом [.., .., ...]
       console.log(question);
+
+      var arr = question[5];
+      console.log(arr);
+      var i = 0;
+      //cosnole.log('arr(i)='); console.log(arr[i]);
+      /*while (arr(i)) {
+        console.log( arr(i) );
+        i++;
+      }*/
+      console.log(question); console.log(new Date(question[3] * 1000));
       assert.equal(question[5].vote, voiceVal, "Результаты голосования не верны");
     })
   })
@@ -185,6 +195,7 @@ contract('Votechain', function(accounts) {
     var voiceVal_1 = true; //жилец голосует ЗА
     var voiceVal_2 = false; //жилец голосует ПРОТИВ
     var voiceVal_3 = true; //жилец голосует ЗА
+    var final = true; // в итоге получим ЗА
 
     return Votechain.deployed().then(function(votechain){
       contractAddress = votechain.address;
@@ -229,10 +240,10 @@ contract('Votechain', function(accounts) {
       //сравним результаты
       //question получается не объектом, а массивом [.., .., ...]
       console.log(question);
-      assert.equal(question[5].vote, voiceVal_3, "Итоги голосования не верны");
+      assert.equal(question[9], final, "Итоги голосования не верны");
     })
   })
-
+*/
 //function vote(uint questionPosition, bool voteVal) public onlyHolder{
 
 
