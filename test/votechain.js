@@ -20,10 +20,10 @@ contract('Votechain', function(accounts) {
     })
   })
 
-  it("представитель УК должен добавить жильца", function(){
+  it("должен добавить жильца руками представителя УК", function(){
     var contractAddress;
     var newHolder = {
-      isActive: true,
+      ethAddress: holder1Addr,
       square: 100,
       realAddress: "Russia;Yekaterinburg;Yeltsina;;3a;102"
     }
@@ -37,7 +37,7 @@ contract('Votechain', function(accounts) {
       var votechain = Votechain.at(contractAddress);
       //добавили новго жильца от имени представителя УК
       return votechain.addHolder(
-        newHolder.isActive,
+        newHolder.ethAddress,
         newHolder.square,
         newHolder.realAddress,
         {from: ukManAddr});
@@ -49,12 +49,101 @@ contract('Votechain', function(accounts) {
 
     }).then(function(holder){
       //сравним площади, если равны - значит факт внесения в список состоялся
-      assert.equal(holder.square, newHolder.square, "Нового жильца УК внести не смог");
+      //holder получается не объектом, а массивом [true, 100, "...."]
+      assert.equal(holder[1], newHolder.square, "Нового жильца УК внести не смог");
     })
   })
 
-  //деактивировать жильца
-  //function deactivateHolder(address holderAddress) public onlyUkMan {
+  //ПОТОМ: проверить, что НЕ предствитель УК добавить жильца не сможет
+
+  it("должен деактивировать жильца руками представителя УК", function(){
+    var contractAddress;
+
+    return Votechain.deployed().then(function(votechain){
+      contractAddress = votechain.address;
+      //установили представителя УК
+      return votechain.setUkMan(ukManAddr);
+
+    }).then(function(tx){
+      var votechain = Votechain.at(contractAddress);
+      //добавили новго жильца от имени представителя УК
+      return votechain.deactivateHolder(holder1Addr, {from: ukManAddr});
+
+    }).then(function(tx){
+      var votechain = Votechain.at(contractAddress);
+      //попробовали взять жильца по эфирному адресу из массива
+      return votechain.holders.call(holder1Addr)
+
+    }).then(function(holder){
+      //сравним площади, если равны - значит факт внесения в список состоялся
+      //holder получается не объектом, а массивом [false, 100, "...."]
+      assert.equal(holder[0], false, "Деактивировать жильца представитель УК не смог");
+    })
+  })
+
+  it("должен руками жильца создать вопрос для голосования", function(){
+    var contractAddress;
+    var questionText = "Make house walls pink";
+
+    return Votechain.deployed().then(function(votechain){
+      contractAddress = votechain.address;
+      //создаем вопрос
+      return votechain.addQuestion(holder1Addr, questionText)
+
+    }).then(function(tx){
+      var votechain = Votechain.at(contractAddress);
+      //получили длину = номер свежего вопроса + 1
+      return votechain.getQuestionsLength.call()
+
+    }).then(function(length){
+      var votechain = Votechain.at(contractAddress);
+      //получили сам вопрос по номеру
+      return votechain.questions.call(length-1)
+
+    }).then(function(question){
+      //сравним тексты
+      //question получается не объектом, а массивом [.., .., ...]
+      assert.equal(question[1], questionText, "Жилец не смог добавить вопрос для голосования");
+    })
+  })
+
+  //ПОТОМ: проверить, что НЕ жилец и НЕ УК добавить вопрос не сможет
+
+  it("должен руками автора вопроса остановить голосование", function(){
+    var contractAddress;
+    var questionText = "Make house walls yellow";
+    var questionPos = false;
+
+    return Votechain.deployed().then(function(votechain){
+      contractAddress = votechain.address;
+      //создаем вопрос
+      return votechain.addQuestion(holder1Addr, questionText)
+
+    }).then(function(tx){
+      var votechain = Votechain.at(contractAddress);
+      //получили длину массива вопросов = номер свежего вопроса + 1
+      return votechain.getQuestionsLength.call()
+
+    }).then(function(length){
+      console.log('length='+length)
+      var votechain = Votechain.at(contractAddress);
+      questionPos = length-1;
+      //по номеру взяли вопрос и остановили
+      console.log(questionPos);
+      //return votechain.stopQuestion(questionPos)
+
+    }).then(function(tx){
+      var votechain = Votechain.at(contractAddress);
+      //получили сам вопрос по номеру
+      return votechain.questions.call(questionPos)
+
+    }).then(function(question){
+      //сравним тексты
+      //question получается не объектом, а массивом [.., .., ...]
+      //assert.equal(question[2], true, "Автор вопроса не смог остановить голосование");
+    })
+  })
+
 
   /*it("should create proposals array in storage", function() {
     var names = ['Ivan','Peter','Nikolaus']; // имена кандидатов

@@ -21,6 +21,11 @@ contract Votechain {
       if ( holders[msg.sender].square != 0) revert();
       _;
     }
+
+    modifier onlyUKorHolder() { //только жильцу или предстителю УК
+      if ( ( holders[msg.sender].square != 0) && (msg.sender != ukMan) ) revert();
+      _;
+    }
     // === РЕЕСТР ЖИЛЬЦОВ ===
 
     // Данные Жильца
@@ -70,6 +75,7 @@ contract Votechain {
     //вопрос, выносимый на голосование
     struct Question{
       address author; //инициатор
+      string text; //формулировка
       bool isVoted; //закончено ли голосование по этому вопросу
       uint8 startTime; //когда выложен на голосование вопрос, block.timestamp
       uint8 endTime;  //когда остановлено голосование
@@ -81,9 +87,10 @@ contract Votechain {
     Question[] public questions;
 
     //внести вопрос
-    function addQuestion(address author) public{
-      questions.push(Question({
+    function addQuestion(address author, string text) public onlyUKorHolder{
+      questions.push(Question({ //порядок полей НЕ МЕНЯТЬ - важно для тестов
           author: author,
+          text: text,
           isVoted: false,
           startTime: uint8(block.timestamp),
           endTime: uint8(block.timestamp),
@@ -93,16 +100,20 @@ contract Votechain {
         }));
     }
 
-    //запустить голосование
-    function startQuestion(uint position) public{
+    //запустить голосование -- пока считаем, что это синоним публикации вопроса
+    /*function startQuestion(uint position) public{
+      if ( msg.sender != questions[position].author) { revert(); } //только автору
+
       questions[position].startTime = uint8(block.timestamp);
-    }
+    } */
 
     //остановить голосование
     function stopQuestion(uint position) public{
-      questions[position].endTime = uint8(block.timestamp);
+      if ( msg.sender != questions[position].author) { revert(); } //только автору
+
+      /*questions[position].endTime = uint8(block.timestamp);
       questions[position].isVoted = true;
-      questions[position].isAccepted = calculateVotes(position);
+      questions[position].isAccepted = calculateVotes(position);*/
     }
 
     //проголосовать.
@@ -139,6 +150,11 @@ contract Votechain {
     // === Constructor ===
     function Votechain() public{
         initiator = msg.sender;
+    }
+
+    // === Getters ===
+    function getQuestionsLength() public returns (uint8){
+      return uint8(questions.length);
     }
 
 /*
