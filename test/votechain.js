@@ -239,11 +239,11 @@ contract('Votechain', function(accounts) {
     }).then(function(question){
       //сравним результаты
       //question получается не объектом, а массивом [.., .., ...]
-      console.log(question);
-      assert.equal(question[9], final, "Итоги голосования не верны");
+      console.log(question[7]);
+      assert.equal(question[7], true, "Итоги голосования не верны");
     })
   })
-*/
+
 //function vote(uint questionPosition, bool voteVal) public onlyHolder{
 
 
